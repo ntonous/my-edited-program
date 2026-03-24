@@ -16,9 +16,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Deploy to Azure Web App
+      - name: Deploy using publish profile (if provided)
+        if: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        uses: azure/webapps-deploy@v3
+        with:
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: .                                 # Deploys everything in the root (your index.html, css, js, etc.)
+
+      - name: Login to Azure (fallback if no publish profile)
+        if: ${{ !secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy using Azure login (fallback)
+        if: ${{ !secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
         uses: azure/webapps-deploy@v3
         with:
           app-name: YOUR_AZURE_WEBAPP_NAME          # ← CHANGE THIS
-          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: .                                 # Deploys everything in the root (your index.html, css, js, etc.)
