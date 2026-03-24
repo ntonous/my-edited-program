@@ -1,0 +1,24 @@
+name: Deploy Static Website to Azure Web App
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:   # Allows manual trigger from GitHub
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: YOUR_AZURE_WEBAPP_NAME          # ← CHANGE THIS
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: .                                 # Deploys everything in the root (your index.html, css, js, etc.)
