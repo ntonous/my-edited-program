@@ -24,18 +24,27 @@ jobs:
           dotnet-version: '8.x'
 
       - name: Find .NET project file (if any)
-        shell: bash
+        shell: pwsh
         run: |
-          proj=$(git ls-files '*.sln' '*.csproj' | head -n1 || true)
-          echo "PROJECT_PATH=$proj" >> $GITHUB_ENV
+          $proj = git ls-files '*.sln','*.csproj' | Select-Object -First 1
+          if (-not $proj) { Write-Host "No .sln or .csproj found."; echo "PROJECT_PATH=" >> $env:GITHUB_ENV }
+          else { Write-Host "Found project: $proj"; echo "PROJECT_PATH=$proj" >> $env:GITHUB_ENV }
+
+      - name: Show detected project (debug)
+        run: echo "PROJECT_PATH=${{ env.PROJECT_PATH }}"
 
       - name: Build with dotnet
         if: env.PROJECT_PATH != ''
-        run: dotnet build "${{ env.PROJECT_PATH }}" --configuration Release
+        run: |
+          echo "Building ${{ env.PROJECT_PATH }}"
+          dotnet --info
+          dotnet build "${{ env.PROJECT_PATH }}" --configuration Release
 
       - name: dotnet publish
         if: env.PROJECT_PATH != ''
-        run: dotnet publish "${{ env.PROJECT_PATH }}" -c Release -o "${{env.DOTNET_ROOT}}/myapp"
+        run: |
+          echo "Publishing ${{ env.PROJECT_PATH }}"
+          dotnet publish "${{ env.PROJECT_PATH }}" -c Release -o "${{env.DOTNET_ROOT}}/myapp"
 
       - name: Upload artifact for deployment job
         if: env.PROJECT_PATH != ''
