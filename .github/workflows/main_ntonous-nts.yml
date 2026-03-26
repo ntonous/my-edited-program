@@ -12,6 +12,8 @@ on:
 jobs:
   build:
     runs-on: windows-latest
+    outputs:
+      has_net_app: ${{ steps.set_has_app.outputs.has_net_app }}
     permissions:
       contents: read #This is required for actions/checkout
 
@@ -57,7 +59,19 @@ jobs:
         if: env.PROJECT_PATH == ''
         run: echo "No .sln or .csproj found in repository — skipping dotnet build/publish steps."
 
+      - id: set_has_app
+        name: Set build outputs
+        shell: pwsh
+        run: |
+          if ($env:PROJECT_PATH -ne '') {
+            echo "Detected project: $env:PROJECT_PATH"
+            echo "has_net_app=true" >> $env:GITHUB_OUTPUT
+          } else {
+            echo "has_net_app=false" >> $env:GITHUB_OUTPUT
+          }
+
   deploy:
+    if: needs.build.outputs.has_net_app == 'true'
     runs-on: windows-latest
     needs: build
     permissions:
