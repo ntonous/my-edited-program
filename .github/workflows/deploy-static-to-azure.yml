@@ -16,15 +16,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Detect publish profile secret
+        id: detect_publish
+        run: |
+          if [ -n "${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}" ]; then
+            echo "has_publish=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_publish=false" >> $GITHUB_OUTPUT
+          fi
+
       - name: Deploy using publish profile (if provided)
-        if: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE != '' }}
+        if: ${{ steps.detect_publish.outputs.has_publish == 'true' }}
         uses: azure/webapps-deploy@v3
         with:
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
           package: .                                 # Deploys everything in the root (your index.html, css, js, etc.)
 
       - name: Login to Azure (fallback if no publish profile)
-        if: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE == '' }}
+        if: ${{ steps.detect_publish.outputs.has_publish == 'false' }}
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
@@ -32,7 +41,7 @@ jobs:
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
       - name: Deploy using Azure login (fallback)
-        if: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE == '' }}
+        if: ${{ steps.detect_publish.outputs.has_publish == 'false' }}
         uses: azure/webapps-deploy@v3
         with:
           app-name: YOUR_AZURE_WEBAPP_NAME          # ← CHANGE THIS
